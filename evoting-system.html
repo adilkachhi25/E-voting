@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Vote India — Secure Online Voting System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0d1b3e;
+    --navy-mid: #162447;
+    --navy-light: #1f3a6b;
+    --gold: #c9a84c;
+    --gold-light: #e2c97e;
+    --gold-pale: #fdf4e0;
+    --green: #1a7a4a;
+    --green-light: #e6f4ee;
+    --red: #b91c1c;
+    --red-light: #fef2f2;
+    --bg: #f8f7f3;
+    --white: #ffffff;
+    --text: #0d1b3e;
+    --text-muted: #64748b;
+    --border: #ddd8c4;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(13,27,62,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: var(--navy);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; position: sticky; top: 0; z-index: 100;
+    border-bottom: 2px solid var(--gold);
+  }
+  .header-brand { display: flex; align-items: center; gap: 12px; }
+  .header-emblem {
+    width: 38px; height: 38px; background: var(--gold);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .header-title { color: var(--white); font-family: 'Playfair Display', serif; font-size: 18px; }
+  .header-sub { color: var(--gold-light); font-size: 12px; letter-spacing: 0.08em; font-weight: 300; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .secure-badge {
+    background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4);
+    color: var(--gold-light); font-size: 11px; padding: 4px 10px; border-radius: 20px;
+    letter-spacing: 0.05em; font-weight: 500;
+  }
+  .btn-logout {
+    background: transparent; border: 1px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.7); font-size: 12px; padding: 6px 14px;
+    border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s; display: none;
+  }
+  .btn-logout:hover { border-color: rgba(255,255,255,0.5); color: white; }
+
+  /* STEP INDICATOR */
+  .steps-bar {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center; gap: 0;
+    overflow-x: auto; display: none;
+  }
+  .step-item {
+    display: flex; align-items: center; gap: 8px; padding: 14px 16px;
+    font-size: 13px; color: var(--text-muted); white-space: nowrap;
+    border-bottom: 3px solid transparent; cursor: default;
+  }
+  .step-item.active { color: var(--navy); border-bottom-color: var(--gold); font-weight: 500; }
+  .step-item.done { color: var(--green); border-bottom-color: var(--green); }
+  .step-num {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--border);
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600;
+    color: var(--text-muted); flex-shrink: 0;
+  }
+  .step-item.active .step-num { background: var(--navy); color: white; }
+  .step-item.done .step-num { background: var(--green); color: white; }
+  .step-arrow { color: var(--border); font-size: 14px; padding: 0 4px; }
+
+  /* MAIN CONTENT */
+  .main { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  /* CARDS */
+  .card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 2rem;
+    display: none; animation: fadeIn 0.35s ease;
+  }
+  .card.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  .card-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--gold-pale); border: 1px solid var(--gold-light);
+    color: #92681a; font-size: 11px; padding: 4px 12px; border-radius: 20px;
+    font-weight: 600; letter-spacing: 0.06em; margin-bottom: 1rem; text-transform: uppercase;
+  }
+  .card h1 {
+    font-family: 'Playfair Display', serif; font-size: 26px; color: var(--navy);
+    margin-bottom: 0.5rem; line-height: 1.3;
+  }
+  .card p.subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 1.5rem; line-height: 1.6; }
+  .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+  /* FORMS */
+  .form-group { margin-bottom: 1.25rem; }
+  label { font-size: 13px; font-weight: 500; color: var(--navy); display: block; margin-bottom: 6px; }
+  label span.req { color: var(--red); }
+  input[type=text], input[type=date], select {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); background: var(--white); transition: border-color 0.2s;
+    appearance: none; -webkit-appearance: none;
+  }
+  input[type=text]:focus, select:focus {
+    outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(13,27,62,0.08);
+  }
+  input.voter-id { font-family: 'DM Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; font-size: 15px; }
+  .input-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media(max-width:520px){ .form-row { grid-template-columns: 1fr; } }
+  
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer; }
+
+  /* BUTTONS */
+  .btn-primary {
+    background: var(--navy); color: white; border: none; padding: 12px 28px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(13,27,62,0.2); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-secondary {
+    background: transparent; color: var(--navy); border: 1.5px solid var(--border);
+    padding: 11px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--navy); background: var(--gold-pale); }
+  .btn-row { display: flex; gap: 12px; margin-top: 1.5rem; align-items: center; }
+  .btn-full { width: 100%; justify-content: center; }
+
+  /* ALERTS */
+  .alert {
+    padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem;
+    display: none; align-items: flex-start; gap: 10px;
+  }
+  .alert.show { display: flex; }
+  .alert-error { background: var(--red-light); border: 1px solid #fca5a5; color: var(--red); }
+  .alert-success { background: var(--green-light); border: 1px solid #86efac; color: var(--green); }
+  .alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .alert-icon { font-size: 16px; margin-top: 0px; flex-shrink: 0; }
+
+  /* VOTER INFO BOX */
+  .voter-info-box {
+    background: var(--gold-pale); border: 1px solid var(--gold-light);
+    border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;
+  }
+  .voter-info-box .vi-title { font-size: 11px; font-weight: 600; color: #92681a; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .voter-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .voter-info-item .lbl { font-size: 11px; color: var(--text-muted); }
+  .voter-info-item .val { font-size: 13px; font-weight: 500; color: var(--navy); }
+  .voter-id-display { font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.1em; }
+
+  /* CANDIDATE CARDS */
+  .candidates-grid { display: flex; flex-direction: column; gap: 10px; }
+  .candidate-card {
+    border: 2px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem;
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;
+    background: var(--white); position: relative;
+  }
+  .candidate-card:hover { border-color: var(--navy-light); background: #f8f9fc; }
+  .candidate-card.selected { border-color: var(--navy); background: #f0f4ff; }
+  .candidate-card input[type=radio] { display: none; }
+  .party-logo {
+    width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 20px; flex-shrink: 0; border: 2px solid transparent;
+  }
+  .candidate-info { flex: 1; }
+  .candidate-name { font-size: 15px; font-weight: 600; color: var(--navy); }
+  .candidate-party { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .candidate-serial { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .check-circle {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: all 0.2s; color: white; font-size: 12px;
+  }
+  .candidate-card.selected .check-circle { background: var(--navy); border-color: var(--navy); }
+  .nota-card { border-style: dashed; }
+
+  /* CONFIRMATION TABLE */
+  .confirm-table { width: 100%; border-collapse: collapse; }
+  .confirm-table tr td { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .confirm-table tr:last-child td { border-bottom: none; }
+  .confirm-table td:first-child { color: var(--text-muted); width: 40%; font-size: 13px; }
+  .confirm-table td:last-child { font-weight: 500; color: var(--navy); }
+
+  /* SELECTED CANDIDATE PREVIEW */
+  .vote-preview {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem; color: white;
+  }
+  .vote-preview .party-logo-lg {
+    width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;
+  }
+  .vote-preview .vp-name { font-size: 17px; font-weight: 600; }
+  .vote-preview .vp-party { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .vote-preview .vp-label { font-size: 10px; color: var(--gold-light); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+
+  /* SUCCESS */
+  .success-icon {
+    width: 80px; height: 80px; background: var(--green-light); border: 3px solid var(--green);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 36px; margin: 0 auto 1.5rem; animation: popIn 0.5s ease;
+  }
+  @keyframes popIn { 0%{transform:scale(0)} 70%{transform:scale(1.1)} 100%{transform:scale(1)} }
+  .success-card { text-align: center; }
+  .reference-code {
+    font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 700;
+    color: var(--navy); letter-spacing: 0.15em; background: var(--gold-pale);
+    border: 1.5px solid var(--gold-light); border-radius: 8px; padding: 12px 20px;
+    display: inline-block; margin: 1rem 0;
+  }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 1.5rem; }
+  .stat-box { background: var(--bg); border-radius: 8px; padding: 12px; text-align: center; }
+  .stat-box .stat-val { font-size: 20px; font-weight: 700; color: var(--navy); font-family: 'DM Mono', monospace; }
+  .stat-box .stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ADMIN PANEL */
+  #adminToggle { font-size: 11px; color: var(--text-muted); cursor: pointer; text-decoration: underline; text-align: center; margin-top: 1rem; display: block; }
+  .admin-panel { display: none; }
+  .admin-panel.open { display: block; }
+  .results-bar-wrap { margin-bottom: 10px; }
+  .results-bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .results-bar-track { height: 24px; background: var(--bg); border-radius: 6px; overflow: hidden; }
+  .results-bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; display: flex; align-items: center; padding-left: 10px; font-size: 11px; color: white; font-weight: 600; }
+
+  /* OTP INPUT */
+  .otp-wrapper { display: flex; gap: 10px; justify-content: center; margin: 1.5rem 0; }
+  .otp-box {
+    width: 48px; height: 56px; border: 2px solid var(--border); border-radius: 8px;
+    font-size: 22px; font-weight: 700; text-align: center; font-family: 'DM Mono', monospace;
+    color: var(--navy); transition: border-color 0.2s; background: white;
+  }
+  .otp-box:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(13,27,62,0.08); }
+
+  /* PROGRESS */
+  .loading-ring {
+    width: 28px; height: 28px; border: 3px solid var(--border);
+    border-top-color: var(--navy); border-radius: 50%; animation: spin 0.7s linear infinite;
+    display: none; margin: 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MISC */
+  .text-center { text-align: center; }
+  .mt-1 { margin-top: 8px; }
+  .mt-2 { margin-top: 16px; }
+  .footnote { font-size: 12px; color: var(--text-muted); margin-top: 1rem; text-align: center; line-height: 1.5; }
+
+  /* LIVE CLOCK */
+  .live-clock { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gold-light); letter-spacing: 0.05em; }
+
+  /* WATERMARK */
+  .wm { position: fixed; bottom: 16px; right: 20px; font-size: 11px; color: var(--text-muted); opacity: 0.5; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="header-emblem">🗳️</div>
+    <div>
+      <div class="header-title">E-Vote India</div>
+      <div class="header-sub">Secure Online Voting Portal</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-clock" id="liveClock"></div>
+    <div class="secure-badge">🔒 SSL Secured</div>
+    <button class="btn-logout" id="btnLogout" onclick="resetAll()">Sign Out</button>
+  </div>
+</header>
+
+<!-- STEP BAR -->
+<div class="steps-bar" id="stepsBar">
+  <div class="step-item active" id="si1"><span class="step-num">1</span>Verify Identity</div>
+  <div class="step-arrow">›</div>
+  <div class="step-item" id="si2"><span class="step-num">2</span>OTP Confirm</div>
+  <div class="step-arrow">›</div>
+  <div class="step-item" id="si3"><span class="step-num">3</span>Select Region</div>
+  <div class="step-arrow">›</div>
+  <div class="step-item" id="si4"><span class="step-num">4</span>Cast Vote</div>
+  <div class="step-arrow">›</div>
+  <div class="step-item" id="si5"><span class="step-num">5</span>Confirm</div>
+</div>
+
+<main class="main">
+
+  <!-- STEP 1: VOTER ID LOGIN -->
+  <div class="card active" id="step1">
+    <div class="card-badge">📋 Voter Verification</div>
+    <h1>Welcome to E-Vote India</h1>
+    <p class="subtitle">Enter your Voter ID (EPIC card number) to securely cast your vote from anywhere in India. Your vote is encrypted and anonymous.</p>
+
+    <div class="alert alert-info show">
+      <span class="alert-icon">ℹ️</span>
+      <span>This portal is for citizens currently residing <strong>outside their registered constituency</strong>. You may vote for your home state/city candidates.</span>
+    </div>
+
+    <div class="alert alert-error" id="loginError">
+      <span class="alert-icon">⚠️</span>
+      <span id="loginErrorMsg">Invalid Voter ID. Please check and try again.</span>
+    </div>
+
+    <div class="form-group">
+      <label>Voter ID / EPIC Number <span class="req">*</span></label>
+      <input type="text" id="voterIdInput" class="voter-id" placeholder="ABC1234567" maxlength="12"
+        oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" />
+      <div class="input-hint">Format: 3 letters + 7 digits (e.g. MH1234567AB)</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Full Name <span class="req">*</span></label>
+        <input type="text" id="voterName" placeholder="As on EPIC card" />
+      </div>
+      <div class="form-group">
+        <label>Date of Birth <span class="req">*</span></label>
+        <input type="date" id="voterDOB" max="2007-01-01" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Registered Home State <span class="req">*</span></label>
+      <select id="homeState">
+        <option value="">-- Select your home state --</option>
+        <option>Andhra Pradesh</option><option>Arunachal Pradesh</option>
+        <option>Assam</option><option>Bihar</option><option>Chhattisgarh</option>
+        <option>Goa</option><option>Gujarat</option><option>Haryana</option>
+        <option>Himachal Pradesh</option><option>Jharkhand</option>
+        <option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option>
+        <option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option>
+        <option>Mizoram</option><option>Nagaland</option><option>Odisha</option>
+        <option>Punjab</option><option>Rajasthan</option><option>Sikkim</option>
+        <option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option>
+        <option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option>
+        <option>Delhi (NCT)</option><option>Jammu & Kashmir</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Currently Located In (City/State) <span class="req">*</span></label>
+      <input type="text" id="currentLocation" placeholder="e.g. Mumbai, Maharashtra" />
+      <div class="input-hint">Where you are physically present right now</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary btn-full" onclick="submitLogin()">
+        Verify &amp; Get OTP →
+      </button>
+    </div>
+    <div class="footnote">By proceeding, you confirm you are the registered voter and have not cast a vote in this election.</div>
+
+    <div class="divider"></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);">
+      <span>🛡️ End-to-end encrypted</span>
+      <span>📜 ECI Compliant Portal</span>
+      <span>⏱️ Session: 15 mins</span>
+    </div>
+  </div>
+
+  <!-- STEP 2: OTP VERIFICATION -->
+  <div class="card" id="step2">
+    <div class="card-badge">📱 Mobile Verification</div>
+    <h1>OTP Confirmation</h1>
+    <p class="subtitle">A 6-digit One-Time Password has been sent to the mobile number linked to your Voter ID. Enter it below to continue.</p>
+
+    <div class="alert alert-info show">
+      <span class="alert-icon">📲</span>
+      <span>OTP sent to: <strong id="maskedMobile">+91 XXXXXX7890</strong> &nbsp;|&nbsp; Valid for <strong id="otpTimer">5:00</strong></span>
+    </div>
+
+    <div class="alert alert-error" id="otpError">
+      <span class="alert-icon">⚠️</span>
+      <span>Incorrect OTP. Please try again.</span>
+    </div>
+
+    <div class="text-center">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Enter 6-digit OTP</p>
+      <div class="otp-wrapper">
+        <input class="otp-box" type="text" maxlength="1" id="o1" oninput="otpNav(this,'','o2')" onkeydown="otpKey(event,this,'','o2')">
+        <input class="otp-box" type="text" maxlength="1" id="o2" oninput="otpNav(this,'o1','o3')" onkeydown="otpKey(event,this,'o1','o3')">
+        <input class="otp-box" type="text" maxlength="1" id="o3" oninput="otpNav(this,'o2','o4')" onkeydown="otpKey(event,this,'o2','o4')">
+        <input class="otp-box" type="text" maxlength="1" id="o4" oninput="otpNav(this,'o3','o5')" onkeydown="otpKey(event,this,'o3','o5')">
+        <input class="otp-box" type="text" maxlength="1" id="o5" oninput="otpNav(this,'o4','o6')" onkeydown="otpKey(event,this,'o4','o6')">
+        <input class="otp-box" type="text" maxlength="1" id="o6" oninput="otpNav(this,'o5','')" onkeydown="otpKey(event,this,'o5','')">
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">Demo hint: Enter any 6 digits</p>
+    </div>
+
+    <div class="btn-row" style="flex-direction:column;gap:10px;margin-top:1rem;">
+      <button class="btn-primary btn-full" onclick="verifyOTP()">Verify OTP →</button>
+      <button class="btn-secondary btn-full" onclick="resendOTP()">Resend OTP</button>
+    </div>
+
+    <div class="btn-row" style="margin-top:0.5rem;">
+      <button class="btn-secondary btn-full" onclick="goStep(1)">← Back</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: SELECT CONSTITUENCY -->
+  <div class="card" id="step3">
+    <div class="card-badge">📍 Your Constituency</div>
+    <h1>Select Your Voting Region</h1>
+    <p class="subtitle">Choose your home state and constituency — these are where your vote will be counted.</p>
+
+    <div class="voter-info-box">
+      <div class="vi-title">Verified Voter</div>
+      <div class="voter-info-grid">
+        <div class="voter-info-item"><div class="lbl">Voter ID</div><div class="val voter-id-display" id="dispVoterId">—</div></div>
+        <div class="voter-info-item"><div class="lbl">Name</div><div class="val" id="dispName">—</div></div>
+        <div class="voter-info-item"><div class="lbl">Home State</div><div class="val" id="dispState">—</div></div>
+        <div class="voter-info-item"><div class="lbl">Currently In</div><div class="val" id="dispCurrent">—</div></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Your Home State <span class="req">*</span></label>
+      <select id="voteState" onchange="loadCities()">
+        <option value="">-- Select state --</option>
+        <option>Andhra Pradesh</option><option>Arunachal Pradesh</option>
+        <option>Assam</option><option>Bihar</option><option>Chhattisgarh</option>
+        <option>Goa</option><option>Gujarat</option><option>Haryana</option>
+        <option>Himachal Pradesh</option><option>Jharkhand</option>
+        <option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option>
+        <option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option>
+        <option>Mizoram</option><option>Nagaland</option><option>Odisha</option>
+        <option>Punjab</option><option>Rajasthan</option><option>Sikkim</option>
+        <option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option>
+        <option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option>
+        <option>Delhi (NCT)</option><option>Jammu & Kashmir</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Parliamentary Constituency <span class="req">*</span></label>
+      <select id="constituency">
+        <option value="">-- Select state first --</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Election Type</label>
+      <select id="electionType">
+        <option value="lok_sabha">Lok Sabha (General Election)</option>
+        <option value="vidhan_sabha">Vidhan Sabha (State Assembly)</option>
+        <option value="municipal">Municipal / City Corporation</option>
+      </select>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(2)">← Back</button>
+      <button class="btn-primary" style="flex:1" onclick="goToVote()">Proceed to Vote →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: CAST VOTE -->
+  <div class="card" id="step4">
+    <div class="card-badge">🗳️ Cast Your Vote</div>
+    <h1>Ballot — <span id="ballotConst">Constituency</span></h1>
+    <p class="subtitle">Select ONE candidate. Your vote is confidential and cannot be changed once submitted.</p>
+
+    <div class="alert alert-info show" style="margin-bottom:1.25rem;">
+      <span class="alert-icon">⏳</span>
+      <span>Voting session expires in: <strong id="sessionTimer">10:00</strong></span>
+    </div>
+
+    <div class="candidates-grid" id="candidatesGrid">
+      <!-- dynamically filled -->
+    </div>
+
+    <div class="btn-row" style="margin-top:1.5rem;">
+      <button class="btn-secondary" onclick="goStep(3)">← Back</button>
+      <button class="btn-primary" style="flex:1" id="btnProceedReview" onclick="proceedToReview()" disabled>Review Vote →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: REVIEW & CONFIRM -->
+  <div class="card" id="step5">
+    <div class="card-badge">✅ Review Your Vote</div>
+    <h1>Confirm Your Vote</h1>
+    <p class="subtitle">Please carefully review your selection before final submission. This action cannot be undone.</p>
+
+    <div class="vote-preview" id="votePreview">
+      <div class="party-logo-lg" id="previewEmoji">🏛️</div>
+      <div>
+        <div class="vp-label">Your chosen candidate</div>
+        <div class="vp-name" id="previewName">—</div>
+        <div class="vp-party" id="previewParty">—</div>
+      </div>
+    </div>
+
+    <table class="confirm-table">
+      <tr><td>Voter ID</td><td class="voter-id-display" id="confVoterId">—</td></tr>
+      <tr><td>Voter Name</td><td id="confName">—</td></tr>
+      <tr><td>Home State</td><td id="confState">—</td></tr>
+      <tr><td>Constituency</td><td id="confConst">—</td></tr>
+      <tr><td>Election Type</td><td id="confElType">—</td></tr>
+      <tr><td>Voting From</td><td id="confLocation">—</td></tr>
+      <tr><td>Timestamp</td><td id="confTime">—</td></tr>
+    </table>
+
+    <div class="alert alert-error" id="submitError">
+      <span class="alert-icon">⚠️</span>
+      <span id="submitErrorMsg">Something went wrong. Please try again.</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:1rem;">
+      <input type="checkbox" id="declareCheck" style="margin-top:3px;width:16px;height:16px;cursor:pointer;" onchange="toggleSubmit()">
+      <label for="declareCheck" style="font-size:13px;line-height:1.5;cursor:pointer;color:var(--text);">
+        I, the undersigned, hereby declare that I am the registered voter with the above Voter ID. I have not previously voted in this election and this is my voluntary choice.
+      </label>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(4)">← Change Vote</button>
+      <button class="btn-primary" style="flex:1;background:#1a7a4a;" id="btnSubmitVote" onclick="submitVote()" disabled>
+        🔒 Submit Vote
+      </button>
+    </div>
+    <p class="footnote">Your vote is encrypted with AES-256. No identifying information is stored with your ballot.</p>
+  </div>
+
+  <!-- STEP 6: SUCCESS -->
+  <div class="card" id="step6">
+    <div class="success-card">
+      <div class="success-icon">✓</div>
+      <div class="card-badge">🎉 Vote Recorded</div>
+      <h1 style="margin-bottom:0.5rem;">Vote Cast Successfully!</h1>
+      <p class="subtitle">Your vote has been securely recorded and encrypted. Thank you for exercising your democratic right.</p>
+
+      <div class="reference-code" id="refCode">EVT-XXXXXX</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:1.5rem;">Save this reference code for verification</p>
+
+      <div class="stats-row" id="statsRow">
+        <div class="stat-box">
+          <div class="stat-val" id="statTotal">0</div>
+          <div class="stat-lbl">Total Votes</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statConst">—</div>
+          <div class="stat-lbl">Constituency</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statTime">—</div>
+          <div class="stat-lbl">Your Vote Time</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <span id="adminToggle" onclick="toggleAdmin()">View live vote tally (demo)</span>
+      <div class="admin-panel" id="adminPanel">
+        <div style="margin-top:1rem;" id="tallyBars"></div>
+      </div>
+
+      <div style="margin-top:1.5rem;">
+        <button class="btn-secondary btn-full" onclick="resetAll()">Start New Session</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="wm">E-Vote India © 2025 — Demo Portal</div>
+
+<script>
+// =================== STATE ===================
+let voter = {};
+let selectedCandidate = null;
+let otpTimerInterval = null;
+let sessionTimerInterval = null;
+let otpSeconds = 300;
+let sessionSeconds = 600;
+let voteDB = {};
+
+const CONSTITUENCIES = {
+  "Maharashtra":["Mumbai North","Mumbai South","Pune","Nagpur","Nashik","Aurangabad","Thane","Kolhapur"],
+  "Uttar Pradesh":["Lucknow","Varanasi","Agra","Kanpur","Allahabad","Meerut","Bareilly","Gorakhpur"],
+  "Madhya Pradesh":["Bhopal","Indore","Gwalior","Ujjain","Jabalpur","Sagar","Rewa","Satna"],
+  "Gujarat":["Ahmedabad East","Ahmedabad West","Surat","Vadodara","Rajkot","Gandhinagar","Bharuch","Jamnagar"],
+  "Rajasthan":["Jaipur Rural","Jaipur City","Jodhpur","Udaipur","Kota","Ajmer","Bikaner","Alwar"],
+  "Karnataka":["Bengaluru North","Bengaluru South","Mysuru","Hubli-Dharwad","Mangaluru","Belagavi","Tumkur","Hassan"],
+  "Tamil Nadu":["Chennai North","Chennai South","Coimbatore","Madurai","Tiruchirappalli","Salem","Tirunelveli","Erode"],
+  "West Bengal":["Kolkata North","Kolkata South","Howrah","Asansol","Durgapur","Siliguri","Midnapore","Bankura"],
+  "Bihar":["Patna Sahib","Muzaffarpur","Gaya","Bhagalpur","Darbhanga","Arrah","Sitamarhi","Nalanda"],
+  "Delhi (NCT)":["New Delhi","East Delhi","North East Delhi","North West Delhi","West Delhi","South Delhi","Chandni Chowk","Patel Nagar"],
+  "Kerala":["Thiruvananthapuram","Kozhikode","Thrissur","Ernakulam","Alappuzha","Palakkad","Malappuram","Kasaragod"],
+  "Punjab":["Amritsar","Ludhiana","Patiala","Jalandhar","Bathinda","Gurdaspur","Fatehgarh Sahib","Anandpur Sahib"],
+  "Haryana":["Gurugram","Faridabad","Ambala","Karnal","Sonepat","Hisar","Rohtak","Kurukshetra"],
+  "Andhra Pradesh":["Visakhapatnam","Vijayawada","Guntur","Tirupati","Kurnool","Nellore","Rajahmundry","Kadapa"],
+  "Telangana":["Hyderabad","Secunderabad","Medak","Nizamabad","Warangal","Khammam","Mahbubnagar","Nalgonda"],
+};
+
+const PARTIES = [
+  {name:"Bharatiya Janata Party",abbr:"BJP",emoji:"🪷",color:"#FF8C00",serial:"01"},
+  {name:"Indian National Congress",abbr:"INC",emoji:"✋",color:"#1565C0",serial:"02"},
+  {name:"Aam Aadmi Party",abbr:"AAP",emoji:"🧹",color:"#003A6B",serial:"03"},
+  {name:"Samajwadi Party",abbr:"SP",emoji:"🚲",color:"#E53935",serial:"04"},
+  {name:"Bahujan Samaj Party",abbr:"BSP",emoji:"🐘",color:"#424242",serial:"05"},
+  {name:"Shiv Sena (UBT)",abbr:"SS",emoji:"🏹",color:"#FF6D00",serial:"06"},
+  {name:"NOTA",abbr:"NOTA",emoji:"❌",color:"#78909C",serial:"99"},
+];
+
+const CANDIDATE_NAMES = ["Ramesh Kumar","Priya Sharma","Ajay Singh","Sunita Devi","Mohan Rao","Kavita Patel","Arjun Mehta"];
+
+// =================== CLOCK ===================
+function startClock(){
+  setInterval(()=>{
+    const n = new Date();
+    document.getElementById('liveClock').textContent =
+      n.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  },1000);
+}
+
+// =================== NAVIGATION ===================
+function goStep(n){
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+  updateStepBar(n);
+  window.scrollTo(0,0);
+  if(n>1){
+    document.getElementById('stepsBar').style.display='flex';
+    document.getElementById('btnLogout').style.display='block';
+  }
+}
+
+function updateStepBar(n){
+  for(let i=1;i<=5;i++){
+    const el = document.getElementById('si'+i);
+    el.classList.remove('active','done');
+    if(i<n) el.classList.add('done');
+    else if(i===n) el.classList.add('active');
+  }
+}
+
+// =================== STEP 1: LOGIN ===================
+function submitLogin(){
+  const vid = document.getElementById('voterIdInput').value.trim();
+  const name = document.getElementById('voterName').value.trim();
+  const dob = document.getElementById('voterDOB').value;
+  const state = document.getElementById('homeState').value;
+  const loc = document.getElementById('currentLocation').value.trim();
+
+  hideAlert('loginError');
+
+  if(vid.length < 8){
+    showAlert('loginError','Voter ID must be at least 8 characters.'); return;
+  }
+  if(!name){ showAlert('loginError','Please enter your full name.'); return; }
+  if(!dob){ showAlert('loginError','Please enter your date of birth.'); return; }
+  if(!state){ showAlert('loginError','Please select your home state.'); return; }
+  if(!loc){ showAlert('loginError','Please enter your current location.'); return; }
+
+  voter = {id:vid, name:name, dob:dob, state:state, location:loc};
+
+  // simulate sending OTP
+  document.getElementById('maskedMobile').textContent = '+91 XXXXXX' + Math.floor(1000+Math.random()*9000);
+  startOTPTimer();
+  goStep(2);
+}
+
+// =================== STEP 2: OTP ===================
+function otpNav(el, prev, next){
+  el.value = el.value.replace(/\D/,'');
+  if(el.value && next) document.getElementById(next).focus();
+}
+function otpKey(e, el, prev, next){
+  if(e.key==='Backspace' && !el.value && prev) document.getElementById(prev).focus();
+}
+function getOTP(){ return ['o1','o2','o3','o4','o5','o6'].map(id=>document.getElementById(id).value).join(''); }
+
+function verifyOTP(){
+  const otp = getOTP();
+  hideAlert('otpError');
+  if(otp.length < 6){ showAlert('otpError','Please enter the complete 6-digit OTP.'); return; }
+  // In demo, any 6 digits work
+  clearInterval(otpTimerInterval);
+  populateStep3();
+  startSessionTimer();
+  goStep(3);
+}
+
+function resendOTP(){
+  ['o1','o2','o3','o4','o5','o6'].forEach(id=>{document.getElementById(id).value='';});
+  otpSeconds = 300;
+  clearInterval(otpTimerInterval);
+  startOTPTimer();
+  hideAlert('otpError');
+}
+
+function startOTPTimer(){
+  otpSeconds = 300;
+  otpTimerInterval = setInterval(()=>{
+    otpSeconds--;
+    const m = Math.floor(otpSeconds/60);
+    const s = otpSeconds%60;
+    document.getElementById('otpTimer').textContent = m+':'+(s<10?'0':'')+s;
+    if(otpSeconds<=0){ clearInterval(otpTimerInterval); document.getElementById('otpTimer').textContent='Expired'; }
+  },1000);
+}
+
+// =================== STEP 3: CONSTITUENCY ===================
+function populateStep3(){
+  document.getElementById('dispVoterId').textContent = voter.id;
+  document.getElementById('dispName').textContent = voter.name;
+  document.getElementById('dispState').textContent = voter.state;
+  document.getElementById('dispCurrent').textContent = voter.location;
+
+  const vs = document.getElementById('voteState');
+  vs.value = voter.state;
+  loadCities();
+}
+
+function loadCities(){
+  const state = document.getElementById('voteState').value;
+  const cSel = document.getElementById('constituency');
+  cSel.innerHTML = '<option value="">-- Select constituency --</option>';
+  const cities = CONSTITUENCIES[state] || generateCities(state);
+  cities.forEach(c=>{
+    const o = document.createElement('option'); o.textContent=c; o.value=c;
+    cSel.appendChild(o);
+  });
+}
+
+function generateCities(state){
+  return [`${state} North`,`${state} South`,`${state} East`,`${state} West`,`${state} Central`];
+}
+
+function goToVote(){
+  const state = document.getElementById('voteState').value;
+  const const_ = document.getElementById('constituency').value;
+  if(!state || !const_){ alert('Please select state and constituency.'); return; }
+
+  voter.voteState = state;
+  voter.constituency = const_;
+  voter.electionType = document.getElementById('electionType').options[document.getElementById('electionType').selectedIndex].text;
+
+  document.getElementById('ballotConst').textContent = const_;
+  buildCandidates(const_);
+  goStep(4);
+}
+
+// =================== STEP 4: BALLOT ===================
+function buildCandidates(constituency){
+  const grid = document.getElementById('candidatesGrid');
+  grid.innerHTML = '';
+  selectedCandidate = null;
+  document.getElementById('btnProceedReview').disabled = true;
+
+  // Generate deterministic-ish candidates from constituency name
+  const seed = constituency.charCodeAt(0) % CANDIDATE_NAMES.length;
+  const parties = [...PARTIES];
+
+  parties.forEach((p,i)=>{
+    const cName = p.abbr==='NOTA' ? 'None of the Above' : CANDIDATE_NAMES[(seed+i)%CANDIDATE_NAMES.length];
+    const div = document.createElement('div');
+    div.className = 'candidate-card' + (p.abbr==='NOTA'?' nota-card':'');
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <div class="party-logo" style="background:${p.color}22;border-color:${p.color}44;font-size:20px;">${p.emoji}</div>
+      <div class="candidate-info">
+        <div class="candidate-name">${cName}</div>
+        <div class="candidate-party">${p.name}</div>
+        <div class="candidate-serial">Ballot No. ${p.serial}</div>
+      </div>
+      <div class="check-circle" id="chk${i}"></div>
+    `;
+    div.onclick = ()=>selectCandidate(i, {name:cName, party:p.name, emoji:p.emoji, abbr:p.abbr});
+    grid.appendChild(div);
+  });
+}
+
+function selectCandidate(idx, info){
+  document.querySelectorAll('.candidate-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.check-circle').forEach(c=>{c.textContent='';});
+  const card = document.querySelector(`.candidate-card[data-idx="${idx}"]`);
+  card.classList.add('selected');
+  document.getElementById('chk'+idx).textContent = '✓';
+  selectedCandidate = info;
+  document.getElementById('btnProceedReview').disabled = false;
+}
+
+// =================== STEP 5: REVIEW ===================
+function proceedToReview(){
+  if(!selectedCandidate) return;
+  document.getElementById('previewEmoji').textContent = selectedCandidate.emoji;
+  document.getElementById('previewName').textContent = selectedCandidate.name;
+  document.getElementById('previewParty').textContent = selectedCandidate.party;
+  document.getElementById('confVoterId').textContent = voter.id;
+  document.getElementById('confName').textContent = voter.name;
+  document.getElementById('confState').textContent = voter.voteState;
+  document.getElementById('confConst').textContent = voter.constituency;
+  document.getElementById('confElType').textContent = voter.electionType;
+  document.getElementById('confLocation').textContent = voter.location;
+  document.getElementById('confTime').textContent = new Date().toLocaleString('en-IN');
+  document.getElementById('declareCheck').checked = false;
+  document.getElementById('btnSubmitVote').disabled = true;
+  hideAlert('submitError');
+  goStep(5);
+}
+
+function toggleSubmit(){
+  document.getElementById('btnSubmitVote').disabled = !document.getElementById('declareCheck').checked;
+}
+
+// =================== STEP 6: SUBMIT ===================
+function submitVote(){
+  const btn = document.getElementById('btnSubmitVote');
+  btn.disabled = true;
+  btn.textContent = '⏳ Submitting...';
+
+  setTimeout(()=>{
+    // Record vote in memory
+    const key = selectedCandidate.abbr;
+    voteDB[key] = (voteDB[key]||0)+1;
+
+    const refCode = 'EVT-' + Math.random().toString(36).substr(2,6).toUpperCase();
+    const now = new Date();
+
+    document.getElementById('refCode').textContent = refCode;
+    document.getElementById('statTotal').textContent = Object.values(voteDB).reduce((a,b)=>a+b,0);
+    document.getElementById('statConst').textContent = voter.constituency.split(' ').slice(-1)[0];
+    document.getElementById('statTime').textContent = now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+
+    buildTally();
+    clearInterval(sessionTimerInterval);
+    goStep(6);
+    document.getElementById('stepsBar').style.display='none';
+  }, 1800);
+}
+
+function buildTally(){
+  const bars = document.getElementById('tallyBars');
+  bars.innerHTML = '';
+  const total = Object.values(voteDB).reduce((a,b)=>a+b,0)||1;
+  const colors = {'BJP':'#FF8C00','INC':'#1565C0','AAP':'#003A6B','SP':'#E53935','BSP':'#424242','SS':'#FF6D00','NOTA':'#78909C'};
+
+  PARTIES.forEach(p=>{
+    const count = voteDB[p.abbr]||0;
+    const pct = Math.round((count/total)*100);
+    const div = document.createElement('div');
+    div.className = 'results-bar-wrap';
+    div.innerHTML = `
+      <div class="results-bar-label">
+        <span>${p.emoji} ${p.abbr}</span>
+        <span>${count} votes (${pct}%)</span>
+      </div>
+      <div class="results-bar-track">
+        <div class="results-bar-fill" style="width:${pct}%;background:${colors[p.abbr]||'#888'};">
+          ${pct>10?pct+'%':''}
+        </div>
+      </div>
+    `;
+    bars.appendChild(div);
+  });
+}
+
+function toggleAdmin(){
+  const panel = document.getElementById('adminPanel');
+  panel.classList.toggle('open');
+  document.getElementById('adminToggle').textContent =
+    panel.classList.contains('open') ? 'Hide tally' : 'View live vote tally (demo)';
+}
+
+// =================== SESSION TIMER ===================
+function startSessionTimer(){
+  sessionSeconds = 600;
+  sessionTimerInterval = setInterval(()=>{
+    sessionSeconds--;
+    const m = Math.floor(sessionSeconds/60);
+    const s = sessionSeconds%60;
+    const el = document.getElementById('sessionTimer');
+    if(el) el.textContent = m+':'+(s<10?'0':'')+s;
+    if(sessionSeconds<=0){ clearInterval(sessionTimerInterval); alert('Session expired. Please login again.'); resetAll(); }
+  },1000);
+}
+
+// =================== HELPERS ===================
+function showAlert(id, msg){
+  const el = document.getElementById(id);
+  el.classList.add('show');
+  const msgEl = document.getElementById(id+'Msg');
+  if(msgEl && msg) msgEl.textContent = msg;
+}
+function hideAlert(id){ document.getElementById(id).classList.remove('show'); }
+
+function resetAll(){
+  voter = {}; selectedCandidate = null;
+  clearInterval(otpTimerInterval); clearInterval(sessionTimerInterval);
+  document.getElementById('stepsBar').style.display='none';
+  document.getElementById('btnLogout').style.display='none';
+  document.getElementById('voterIdInput').value='';
+  document.getElementById('voterName').value='';
+  document.getElementById('voterDOB').value='';
+  document.getElementById('homeState').value='';
+  document.getElementById('currentLocation').value='';
+  ['o1','o2','o3','o4','o5','o6'].forEach(id=>{document.getElementById(id).value='';});
+  hideAlert('loginError'); hideAlert('otpError'); hideAlert('submitError');
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('step1').classList.add('active');
+  document.getElementById('adminPanel').classList.remove('open');
+}
+
+// INIT
+startClock();
+</script>
+</body>
+</html>
